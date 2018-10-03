@@ -1,0 +1,214 @@
+# -*- coding: utf-8 -*-
+import requests
+from bs4 import BeautifulSoup
+from itertools import groupby
+import random
+import winsound
+import re
+
+def myScraper(dy,luna):
+    linkHoarder = []
+    for j in dy:
+        theLink = "https://www.famousbirthdays.com/"+luna+str(j)+".html"
+        page = requests.get(theLink)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        all_links = soup.find_all("a")
+        for link in all_links:
+            linkHoarder.append(link.get("href"))
+    
+    purified = []
+    for n in linkHoarder:
+        if 'https://www.famousbirthdays.com/people/' in n:
+            purified.append(n)
+    
+    return purified
+
+def getBio(ln):
+    page = requests.get(ln)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    tt = soup.find_all("p")
+        
+    return tt
+
+def details(ln):
+    page = requests.get(ln)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    demlinks = soup.find_all("a")
+    lnkonly = []
+    for link in demlinks:
+        lnkonly.append(link.get("href"))
+    place = []
+    birthsign = []
+    profession = []
+    birthyear = []
+    birthmonth = []
+    namae = []
+    deathDate = []
+    months = ['january','february','march','april','may','june','july','august','september','october','november','december']
+    for n in lnkonly:
+        if '/deceased' in n:
+            deathDate.append(n)
+        if n.find('/birthplace') == 0:
+            place.append(n)
+        if n.find('/astrology') == 0:
+            birthsign.append(n)
+        if n.find('/profession') == 0:
+            profession.append(n)
+        if n.find('/year') == 0:
+            birthyear.append(n)
+        if n.find('/name') == 0:
+            namae.append(n)
+        for j in months:
+            if j in n:
+                birthmonth.append(n)
+    if len(birthmonth) > 0:
+        birthmonth = birthmonth[0].replace('.html', '').replace('/', '')
+        rem = [int(''.join(i)) for is_digit, i in groupby(birthmonth, str.isdigit) if is_digit]
+        birthmonth = birthmonth.replace(str(rem[0]), '')
+        day = rem[0]
+    else:
+        birthmonth = 'No Birthmonth'
+        day = 'No Birthday'
+    if len(deathDate) > 0:
+        for j in deathDate:
+            if '/day/' and '/age/' not in j:
+                deathYear = j.replace('/deceased/','').replace('.html','')
+    else:
+        deathYear = 'Still Alive'
+        
+    if len(place) > 0:
+        place = place[0].replace('.html', '').replace('/birthplace/', '')
+        placeSmall = place
+        place = place.title()
+    else:
+        place = 'No Birthplace'
+        placeSmall = place
+        
+    if len(birthyear) > 0:
+        birthyear = birthyear[0].replace('.html', '').replace('/year/', '')
+    else:
+        birthyear = 'No Birthyear'
+        
+    if len(birthsign) > 0:
+        birthsign = birthsign[0].replace('.html', '').replace('/astrology/', '')
+    else:
+        birthsign = 'No Birthsign'
+        
+    if len(profession) > 0:
+        profession = profession[0].replace('.html', '').replace('/profession/from/','').replace('-'+placeSmall, '')
+    else:
+        profession = 'No Profession'
+        
+    if '/profession/'in profession:
+        profession = profession.replace('/profession/','')
+        
+    pics = soup.find_all('img')
+    thePic = []
+    for image in pics:
+        thePic.append(image.get("src"))
+    if len(thePic) > 1:
+        profPic = thePic[2]
+    else:
+        profPic = 'No Profile Picture'
+    
+    if profPic != 'No Profile Picture':
+        name = profPic.replace('-image.jpg', '').replace('https://www.famousbirthdays.com/faces/', '')
+        name = name.replace('-',' ')
+        name = name.title()
+        name = name.split()
+        # reverse list
+        name.reverse()
+        # now print
+        name = " ".join(name)
+    else:
+        name = 'No Name'
+        
+    return birthmonth , place, birthyear, day, profession, name, birthsign, profPic, deathYear
+
+        
+jan  = range(1,31)
+urlJan = myScraper(jan,'january')
+
+feb = range(1,29)
+urlFeb = myScraper(feb,'february')
+
+mar  = range(1,31)
+urlMar = myScraper(mar,'march')
+
+apr = range(1,30)
+urlApr = myScraper(apr,'april')
+
+may  = range(1,31)
+urlMay = myScraper(may,'may')
+
+jun = range(1,30)
+urlJun = myScraper(jun,'june')
+
+jul  = range(1,31)
+urlJul = myScraper(jul,'july')
+
+aug  = range(1,31)
+urlAug = myScraper(aug,'august')
+
+sep = range(1,30)
+urlSep = myScraper(sep,'september')
+
+octb  = range(1,31)
+urlOct = myScraper(octb,'october')
+
+nov = range(1,30)
+urlNov = myScraper(nov,'november')
+
+dec  = range(1,31)
+urlDec = myScraper(dec,'december')
+
+everyPersonLink = urlJan + urlFeb + urlMar + urlApr + urlMay + urlJun + urlJul + urlAug + urlSep + urlOct + urlNov + urlDec 
+
+# name, birthplace, birthsign, YEAR, DAY, COUNTRY, MONTH, profession
+n = 1
+csv = open('scrapedData.csv', "w",encoding='utf-8') 
+#"w" indicates that you're writing strings to the file
+columnTitleRow = "Name of Celebrity; Day of Birth; Month of Birth; Year of Birth; Year of Death; Astrological Sign; Place of Birth; Profession; Link to Profile Picture; Details about Celebrity \n"
+string1 = ["Are you searching for","Are you looking for","Do you know", "Do you want to know","Do you need to know","Are you interested in knowing","Would you like to know"]
+string2 = ["Instagram profile, Facebook page, Youtube channel or Twitter account","Facebook page, Instagram profile, Youtube channel or Twitter account","Twitter account, Instagram profile, Youtube channel or Facebook page"]
+csv.write(columnTitleRow)
+
+m = 0
+
+for j in everyPersonLink:
+    mnth, plc, yer, day, job, name, sign, picurl, dthyer = details(j)
+    tt = getBio(j)
+    biopar = ''
+
+    paragraphs = []
+    for x in tt:
+        paragraphs.append(str(x))
+        
+    for x in paragraphs:
+        biopar = biopar + x + ' '
+    
+    tt = re.sub(r'http\S+', '',  biopar)
+    tt = tt.replace('<a href=\"','')
+    
+    day = str(day)
+    
+    if m%3000 == 0:
+        print(m)
+    m += 1
+    
+    bDate = day + ' ' + mnth + ', ' + str(yer)
+    
+    s1 = random.randint(0, len(string1)-1)
+    s2 = random.randint(0, len(string2)-1)
+    bio = "<p class=" + "\"" + "celeb" + "\"" + ">" + string1[s1] + " <strong>" + " "+ name + "'s Age and Birthday date</strong>? <strong>" + name + "</strong> was born on " + bDate + " in " + plc + ".</p><p>How old is this celebrity? And what are his/her social media accounts? " + string1[s1] + " " +  name + "'s " + string2[s2] + "? Let's check out:</p><p class=" + "\"" + "celebdesc" + "\"" + "> " + tt 
+   
+    
+    if name != 'No Name':
+        row = name + ';' + day + '; ' + mnth + '; ' + str(yer) + '; ' + dthyer + '; ' + sign + '; ' + plc + '; ' + job + '; ' + picurl + '; ' + bio
+        csv.write(row)
+        csv.write('\n')
+        n += 1
+        if n%1000 == 0:
+            print(n)
+csv.close()
+winsound.Beep(1000, 300)
